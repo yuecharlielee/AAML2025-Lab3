@@ -10,6 +10,7 @@ Brief introduction of Lab3
 ├── data_generator.py
 ├── Makefile
 ├── Makefile_ncverilog
+├── Makefile_vcs
 ├── README.md
 ├── RTL
 │   ├── global_buffer.v
@@ -22,7 +23,7 @@ Brief introduction of Lab3
 - `RTL`: The source code of your design
 - `TESTBENCH`: The testbench to test your design.
 - `data_generator.py`: The generator to generate the test case.
-- `TPU.vcd`: the waveform after running any test.
+- `dump.(vcd|fsdb)`: the waveform after running any test.
 
 ## Makefile
 - `make verif1`
