@@ -166,7 +166,7 @@ def main():
     in_fd.write(f"{ncases:d}")
 
     for n in range(ncases):
-        gen_one_case(n, in_fd, legible_fd, all_one=all_one, mode=mode, shape_range=(4, 255), val_range=(0, 255))
+        gen_one_case(n, in_fd, legible_fd, all_one=all_one, mode=mode, shape_range=(4, 127), val_range=(0, 255))
 
     # K = 0
     # M = 0

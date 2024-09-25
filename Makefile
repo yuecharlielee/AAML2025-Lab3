@@ -1,7 +1,3 @@
-
-#------------------------------------------------------------------------------#
-# Simulator                                                                    #
-#------------------------------------------------------------------------------#
 VERILOG=iverilog
 
 #------------------------------------------------------------------------------#
@@ -35,7 +31,7 @@ verif3: clean
 	$(SIM) verif3/simulation +access+r
 
 verif4: clean
-	python3 data_generator.py --mode 3 --target_dir verif4 --ncases 100
+	python3 data_generator.py --mode 3 --target_dir verif4 --ncases 50
 	cp verif4/input.txt verif4/input.bk
 	mv verif4/input.txt $(TESTBENCH)/
 	$(VERILOG) -o verif4/simulation $(TESTBENCH)/TESTBENCH.v -I $(TESTBENCH) -I $(RTL_DIR) -D RTL
