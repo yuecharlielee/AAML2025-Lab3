@@ -37,10 +37,10 @@ wire [127:0]    C_data_out;
 
 initial begin
     `ifdef RTL
-        // $fsdbDumpfile("TPU.fsdb"); fsdb if you want
+        // $fsdbDumpfile("dump.fsdb"); // fsdb if you want
         // $fsdbDumpvars(0,"+mda");
 	
-	$dumpfile("TPU.vcd");
+	$dumpfile("dump.vcd");
 	$dumpvars(0, TESTBENCH);
     `endif
 end
