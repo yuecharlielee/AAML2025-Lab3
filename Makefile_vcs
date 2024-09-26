@@ -35,5 +35,13 @@ verif4: clean
 	$(VCS) -o simv -full64 -debug_access+all -sverilog +incdir+$(TESTBENCH)+$(RTL_DIR) $(TESTBENCH)/TESTBENCH.v +define+RTL
 	$(SIM) +access+r
 
+# verif_signed is not a part of lab 3
+verif_signed: clean
+	python3 data_generator.py --mode 4 --target_dir verif5 --ncases 50
+	cp verif5/input.txt verif5/input.bk
+	mv verif5/input.txt $(TESTBENCH)/
+	$(VCS) -o simv -full64 -debug_access+all -sverilog +incdir+$(TESTBENCH)+$(RTL_DIR) $(TESTBENCH)/TESTBENCH.v +define+RTL
+	$(SIM) +access+r
+
 clean:
 	rm -rf verif* simv* csrc* ucli.key DVEfiles

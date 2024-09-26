@@ -37,6 +37,14 @@ verif4: clean
 	$(VERILOG) -o verif4/simulation $(TESTBENCH)/TESTBENCH.v -I $(TESTBENCH) -I $(RTL_DIR) -D RTL
 	$(SIM) verif4/simulation +access+r
 
+# verif_signed is not a part of lab 3
+verif_signed: clean
+	python3 data_generator.py --mode 4 --target_dir verif5 --ncases 50
+	cp verif5/input.txt verif5/input.bk
+	mv verif5/input.txt $(TESTBENCH)/
+	$(VERILOG) -o verif5/simulation $(TESTBENCH)/TESTBENCH.v -I $(TESTBENCH) -I $(RTL_DIR) -D RTL
+	$(SIM) verif5/simulation +access+r
+
 clean:
 #------------------------------------------------------------------------------#
 	rm -rf verif*

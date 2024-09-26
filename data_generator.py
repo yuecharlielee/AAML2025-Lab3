@@ -98,18 +98,24 @@ def gen_one_case(i, in_fd=None, c_fd=None, all_one=False, mode=0, shape_range=(4
         K = random.randint(shape_range[0], shape_range[1])
         M = random.randint(shape_range[0], shape_range[1])
         N = random.randint(shape_range[0], shape_range[1])
-
+    elif mode == 4:
+        K = M = N = 16
     #* generate the matrix
 
     if all_one:
         Am = np.ones((M, K), dtype=np.uint8)
         Bm = np.ones((K, N), dtype=np.uint8)
+    elif mode == 4:
+        Am = np.random.randint(-128, high=127, size=(M, K), dtype=np.int8)
+        Bm = np.random.randint(-128, high=127, size=(K, N), dtype=np.int8) 
     else:
         Am = np.random.randint(val_range[0], high=val_range[1], size=(M, K), dtype=np.uint8)
         Bm = np.random.randint(val_range[0], high=val_range[1], size=(K, N), dtype=np.uint8)
 
-
-    Cm = np.matmul(Am, Bm, dtype=np.uint32)
+    if mode != 4:
+        Cm = np.matmul(Am, Bm, dtype=np.uint32)
+    else:
+        Cm = np.matmul(Am, Bm, dtype=np.int32)
     AmT = Am.transpose()
 
     # print(K, M, N)
@@ -168,54 +174,6 @@ def main():
     for n in range(ncases):
         gen_one_case(n, in_fd, legible_fd, all_one=all_one, mode=mode, shape_range=(4, 127), val_range=(0, 255))
 
-    # K = 0
-    # M = 0
-    # N = 0
-    # if mode == 0:
-    #     K = M = N = 2
-    # elif mode == 1:
-    #     K = M = N = 4
-    # elif mode == 2:
-    #     K = random.randint(4, 256)
-    #     M = 4
-    #     N = 4
-    # elif mode == 3:
-    #     K = random.randint(4, 15)
-    #     M = random.randint(4, 15)
-    #     N = random.randint(4, 15)
-
-    # #* generate the matrix
-
-    # if all_one:
-    #     Am = np.ones((M, K), dtype=np.uint8)
-    #     Bm = np.ones((K, N), dtype=np.uint8)
-    # else:
-    #     Am = np.random.randint(0, high=255, size=(M, K), dtype=np.uint8)
-    #     Bm = np.random.randint(0, high=255, size=(K, N), dtype=np.uint8)
-
-    # AmT = Am.transpose()
-
-    # print(K, M, N)
-    # print(AmT)
-    # print(Bm)
-
-
-
-
-    # write_config(in_fd, K, M, N)
-    # write_matrix(in_fd, AmT)
-    # write_matrix(in_fd, Bm)
-
-
-    # legible_fd.write("----------------------------------------------\n")
-    # legible_fd.write(f"                 Case {1}                    \n")
-    # legible_fd.write("----------------------------------------------\n")
-    # legible_fd.write(f"K: {K:3d} M: {M:3d} N:{N:3d}\n")
-    # write_readable(legible_fd, AmT, desc="A: \n")
-    # write_readable(legible_fd, Bm, desc ="B: \n")
-
-
-    
 
 
 if __name__ == "__main__":
