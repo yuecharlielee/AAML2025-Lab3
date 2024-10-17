@@ -67,8 +67,6 @@ integer cycles;
 integer total_cycles;
 integer in_fd;
 integer patcount;
-integer nrow;
-integer i, j, k;
 integer err;
 
 
@@ -80,8 +78,6 @@ real CYCLE;
 
 reg [127:0] GOLDEN [65535:0];
 
-reg [7:0] rbuf [3:0];
-reg [31:0] goldenbuf [3:0];
 reg [7:0] K_golden;
 reg [7:0] M_golden;
 reg [7:0] N_golden;
@@ -224,39 +220,48 @@ end endtask
 
 
 task read_A_Matrix; begin
+    reg [7:0] rbuf_a [3:0];
+    integer nrow_a;
+    integer i_a;
 
-    nrow = (M_golden[1:0] !== 2'b00) ?  K_golden * ((M_golden>>2) + 1) : K_golden * (M_golden>>2);
+    nrow_a = (M_golden[1:0] !== 2'b00) ?  K_golden * ((M_golden>>2) + 1) : K_golden * (M_golden>>2);
     
-    for(i=0;i<nrow;i=i+1) begin
-        dummy_var_for_iverilog = $fscanf(in_fd, "%h %h %h %h", rbuf[3], rbuf[2], rbuf[1], rbuf[0]);
-        gbuff_A.gbuff[i] = {rbuf[3], rbuf[2], rbuf[1], rbuf[0]};
-        // $display("A[%d] = %8h", i, gbuff_A.gbuff[i]);
+    for(i_a=0;i_a<nrow_a;i_a=i_a+1) begin
+        dummy_var_for_iverilog = $fscanf(in_fd, "%h %h %h %h", rbuf_a[3], rbuf_a[2], rbuf_a[1], rbuf_a[0]);
+        gbuff_A.gbuff[i_a] = {rbuf_a[3], rbuf_a[2], rbuf_a[1], rbuf_a[0]};
+        // $display("A[%d] = %8h", i_a, gbuff_A.gbuff[i_a]);
     end
 
 end endtask
 
 
 task read_B_Matrix; begin
+    reg [7:0] rbuf_b [3:0];
+    integer nrow_b;
+    integer i_b;
 
-    nrow = (N_golden[1:0] !== 2'b00) ? K_golden * ((N_golden >> 2) + 1) : K_golden * (N_golden >> 2);
+    nrow_b = (N_golden[1:0] !== 2'b00) ? K_golden * ((N_golden >> 2) + 1) : K_golden * (N_golden >> 2);
 
-    for(i=0;i<nrow;i=i+1) begin
-        dummy_var_for_iverilog = $fscanf(in_fd, "%h %h %h %h", rbuf[3], rbuf[2], rbuf[1], rbuf[0]);
-        gbuff_B.gbuff[i] = {rbuf[3], rbuf[2], rbuf[1], rbuf[0]};
-        // $display("B[%d] = %8h", i, gbuff_A.gbuff[i]);
+    for(i_b=0;i_b<nrow_b;i_b=i_b+1) begin
+        dummy_var_for_iverilog = $fscanf(in_fd, "%h %h %h %h", rbuf_b[3], rbuf_b[2], rbuf_b[1], rbuf_b[0]);
+        gbuff_B.gbuff[i_b] = {rbuf_b[3], rbuf_b[2], rbuf_b[1], rbuf_b[0]};
+        // $display("B[%d] = %8h", i_b, gbuff_B.gbuff[i_b]);
     end
 
 end endtask
 
 
 task read_golden; begin
+    reg [31:0] goldenbuf [3:0];
+    integer nrow_golden;
+    integer i_g;
 
-    nrow = (N_golden[1:0] !== 2'b00) ? M_golden * ((N_golden>>2) + 1) : M_golden * (N_golden>>2);
+    nrow_golden = (N_golden[1:0] !== 2'b00) ? M_golden * ((N_golden>>2) + 1) : M_golden * (N_golden>>2);
 
-    for(i=0;i<nrow;i=i+1) begin
+    for(i_g=0;i_g<nrow_golden;i_g=i_g+1) begin
         dummy_var_for_iverilog = $fscanf(in_fd, "%h %h %h %h", goldenbuf[3], goldenbuf[2], goldenbuf[1], goldenbuf[0]);
-        GOLDEN[i] = {goldenbuf[3], goldenbuf[2], goldenbuf[1], goldenbuf[0]};
-        // $display("GOLDEN[%d] = %8h %8h %8h %8h", i, GOLDEN[i][127:96],  GOLDEN[i][95:64],  GOLDEN[i][63:32],  GOLDEN[i][31:0]);
+        GOLDEN[i_g] = {goldenbuf[3], goldenbuf[2], goldenbuf[1], goldenbuf[0]};
+        // $display("GOLDEN[%d] = %8h %8h %8h %8h", i_g, GOLDEN[i_g][127:96],  GOLDEN[i_g][95:64],  GOLDEN[i_g][63:32],  GOLDEN[i_g][31:0]);
     end
 
 end endtask
@@ -289,28 +294,29 @@ end endtask
 
 
 task golden_check; begin
-
+    integer nrow_gc;
+    integer i_gc;
     err = 0;
 
-    nrow = (N_golden[1:0] !== 2'b00) ? M_golden * ((N_golden>>2) + 1) : M_golden * (N_golden>>2);
-    for(i = 0; i < nrow; i=i+1) begin
-        if(GOLDEN[i][127:96] !== gbuff_C.gbuff[i][127:96]) begin
-            $display("gbuff[%d][127:96] = %8h, expect = %8h", i, gbuff_C.gbuff[i][127:96], GOLDEN[i][127:96]);
+    nrow_gc = (N_golden[1:0] !== 2'b00) ? M_golden * ((N_golden>>2) + 1) : M_golden * (N_golden>>2);
+    for(i_gc=0;i_gc<nrow_gc;i_gc=i_gc+1) begin
+        if(GOLDEN[i_gc][127:96] !== gbuff_C.gbuff[i_gc][127:96]) begin
+            $display("gbuff[%d][127:96] = %8h, expect = %8h", i_gc, gbuff_C.gbuff[i_gc][127:96], GOLDEN[i_gc][127:96]);
             err = err + 1;
         end 
 
-        if(GOLDEN[i][95:64] !== gbuff_C.gbuff[i][95:64]) begin
-            $display("gbuff[%d][95:64] = %8h, expect = %8h", i, gbuff_C.gbuff[i][95:64], GOLDEN[i][95:64]);
+        if(GOLDEN[i_gc][95:64] !== gbuff_C.gbuff[i_gc][95:64]) begin
+            $display("gbuff[%d][95:64] = %8h, expect = %8h", i_gc, gbuff_C.gbuff[i_gc][95:64], GOLDEN[i_gc][95:64]);
             err = err + 1;
         end
 
-        if(GOLDEN[i][63:32] !== gbuff_C.gbuff[i][63:32]) begin
-            $display("gbuff[%d][63:32] = %8h, expect = %8h", i, gbuff_C.gbuff[i][63:32], GOLDEN[i][63:32]);
+        if(GOLDEN[i_gc][63:32] !== gbuff_C.gbuff[i_gc][63:32]) begin
+            $display("gbuff[%d][63:32] = %8h, expect = %8h", i_gc, gbuff_C.gbuff[i_gc][63:32], GOLDEN[i_gc][63:32]);
             err = err + 1;
         end
 
-        if(GOLDEN[i][31:0] !== gbuff_C.gbuff[i][31:0]) begin
-            $display("gbuff[%d][31:0] = %8h, expect = %8h", i, gbuff_C.gbuff[i][31:0], GOLDEN[i][31:0]);
+        if(GOLDEN[i_gc][31:0] !== gbuff_C.gbuff[i_gc][31:0]) begin
+            $display("gbuff[%d][31:0] = %8h, expect = %8h", i_gc, gbuff_C.gbuff[i_gc][31:0], GOLDEN[i_gc][31:0]);
             err = err + 1;
         end
     end
