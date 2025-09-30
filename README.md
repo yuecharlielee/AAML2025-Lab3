@@ -1,7 +1,7 @@
-# AAML2024 Lab3
+# AAML2025 Lab3
 
 
-[Lab introduction of Lab3](https://nycu-caslab.github.io/AAML2024/labs/lab_3.html)
+[Lab introduction of Lab3](https://nycu-caslab.github.io/AAML2025/labs/lab_3.html)
 
 
 ## Directory Structure
