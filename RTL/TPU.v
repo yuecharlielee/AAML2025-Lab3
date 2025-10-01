@@ -34,24 +34,67 @@ input [7:0]      M;
 input [7:0]      N;
 output  reg      busy;
 
-output           A_wr_en;
-output [15:0]    A_index;
-output [31:0]    A_data_in;
+output reg          A_wr_en;
+output reg [15:0]    A_index;
+output reg [31:0]    A_data_in;
 input  [31:0]    A_data_out;
 
-output           B_wr_en;
-output [15:0]    B_index;
-output [31:0]    B_data_in;
+output reg          B_wr_en;
+output reg [15:0]    B_index;
+output reg [31:0]    B_data_in;
 input  [31:0]    B_data_out;
 
-output           C_wr_en;
-output [15:0]    C_index;
-output [127:0]   C_data_in;
+output reg            C_wr_en;
+output reg [15:0]    C_index;
+output reg [127:0]   C_data_in;
 input  [127:0]   C_data_out;
 
+reg [127:0] counter;
+
+always @(posedge clk or rst_n) begin
+    if(!rst_n) begin
+        counter <= 0;
+        busy <= 0;
+        C_data_in <= 127'b0;
+        C_wr_en <= 1'b0;
+        C_index <= 1'b0;
+
+        A_data_in <= 127'b0;
+        A_wr_en <= 1'b0;
+        A_index <= 1'b0;
 
 
-//* Implement your design here
+        B_data_in <= 127'b0;
+        B_wr_en <= 1'b0;
+        B_index <= 1'b0;
+
+    end
+    else begin
+        counter <= counter + 1;
+        
+        C_data_in <= 127'b1;
+        C_wr_en <= 1'b1;
+        C_index <= 1'b1;
+
+        A_data_in <= 127'b0;
+        A_wr_en <= 1'b0;
+        A_index <= A_index + 1;
+
+
+        B_data_in <= 127'b0;
+        B_wr_en <= 1'b0;
+        B_index <= B_index + 1;
+
+        if(counter <= 100) begin
+            busy <= 1;
+        end
+        else begin
+            busy <= 0;
+        end
+    end
+end
+
+
 
 
 endmodule
