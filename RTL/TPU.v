@@ -78,7 +78,8 @@ always @(posedge clk or rst_n) begin
 
         A_data_in <= 127'b0;
         A_wr_en <= 1'b0;
-        A_index <= A_index + 1;
+        A_index <= !A_index;
+        
 
 
         B_data_in <= 127'b0;

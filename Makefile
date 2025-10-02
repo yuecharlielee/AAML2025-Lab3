@@ -45,6 +45,19 @@ verif_signed: clean
 	$(VERILOG) -g2005-sv -o verif5/simulation $(TESTBENCH)/TESTBENCH.v -I $(TESTBENCH) -I $(RTL_DIR) -D RTL
 	$(SIM) verif5/simulation +access+r
 
-clean:
-#------------------------------------------------------------------------------#
+systolic_test: clean_systolic
+	mkdir -p systolic_verif
+	$(VERILOG) -g2005-sv -o systolic_verif/simulation RTL/*.v -I $(RTL_DIR) -D RTL
+	$(SIM) systolic_verif/simulation +access+r
+
+# Add this to your clean target or create a separate one
+clean_systolic:
+	rm -rf systolic_verif
+
+# Update your main clean target to include systolic cleanup
+clean: clean_systolic
 	rm -rf verif*
+
+# clean:
+# #------------------------------------------------------------------------------#
+# 	rm -rf verif*
