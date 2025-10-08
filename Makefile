@@ -50,12 +50,20 @@ systolic_test: clean_systolic
 	$(VERILOG) -g2005-sv -o systolic_verif/simulation RTL/*.v -I $(RTL_DIR) -D RTL
 	$(SIM) systolic_verif/simulation +access+r
 
+buffer_test: clean_buffer
+	mkdir -p buffer_verif
+	$(VERILOG) -g2005-sv -o buffer_verif/simulation RTL/buffer.v RTL/buffer_tb.v -I $(RTL_DIR)
+	$(SIM) buffer_verif/simulation +access+r
+
 # Add this to your clean target or create a separate one
 clean_systolic:
 	rm -rf systolic_verif
 
+clean_buffer:
+	rm -rf buffer_verif
+
 # Update your main clean target to include systolic cleanup
-clean: clean_systolic
+clean: clean_systolic clean_buffer
 	rm -rf verif*
 
 # clean:
