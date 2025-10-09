@@ -47,7 +47,7 @@ verif_signed: clean
 
 systolic_test: clean_systolic
 	mkdir -p systolic_verif
-	$(VERILOG) -g2005-sv -o systolic_verif/simulation RTL/*.v -I $(RTL_DIR) -D RTL
+	$(VERILOG) -g2005-sv -o systolic_verif/simulation RTL/buffer.v RTL/PE.v RTL/systolic_array.v RTL/systolic_array_tb_with_buffer.v RTL/global_buffer.v -I $(RTL_DIR) -D RTL
 	$(SIM) systolic_verif/simulation +access+r
 
 buffer_test: clean_buffer
