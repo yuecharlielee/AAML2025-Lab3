@@ -83,9 +83,11 @@ buffer input_buffer_B (
 );
 
 
+reg systolic_valid;
+
 systolic_array SA (
     .rst_n(rst_n),
-    .in_valid(in_valid),
+    .in_valid(systolic_valid),
     .clk(clk),
     .in_a(A_buffer_out),
     .in_b(B_buffer_out),
@@ -100,6 +102,10 @@ reg [7:0] M_reg, N_reg, K_reg;
 reg [7:0] tile_m, tile_n, tile_k;
 reg [7:0] max_tile_m, max_tile_n, max_tile_k;
 
+reg [31:0] c_reg [0:127][0:127];
+
+integer i, j;
+
 localparam IDLE = 3'd0;
 localparam LOAD = 3'd1;
 localparam CALC = 3'd2;
@@ -110,9 +116,12 @@ localparam TILE_NEXT = 3'd5;
 reg [3:0] state, next_state;
 reg [7:0] load_cnt, calc_cnt, wb_cnt;
 
-wire [15:0] A_addr = ((tile_k * 4 + load_cnt) * ((M_reg + 3) >> 2)) + tile_m;
-wire [15:0] B_addr = ((tile_k * 4 + load_cnt) * ((N_reg + 3) >> 2)) + tile_n;
-wire [15:0] C_addr = ((tile_m * 4 + wb_cnt) * ((N_reg + 3) >> 2)) + tile_n;
+// wire [15:0] A_addr = ((tile_k * 4 * load_cnt) * ((M_reg + 3) >> 2)) + tile_m;
+// wire [15:0] B_addr = ((tile_k * 4 + load_cnt) * ((N_reg + 3) >> 2)) + tile_n;
+// wire [15:0] C_addr = ((tile_m * 4 + wb_cnt) * ((N_reg + 3) >> 2)) + tile_n;
+wire [15:0] A_addr = (((tile_k * 4 * M_reg) + (tile_m * 4)) >> 2) + load_cnt;
+wire [15:0] B_addr = (((tile_k * 4 * N_reg) + (tile_n * 4)) >> 2) + load_cnt;
+wire [15:0] C_addr = (((tile_m * 4 + wb_cnt) * N_reg) + (tile_n * 4)) >> 2;
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
@@ -125,6 +134,11 @@ always @(posedge clk or negedge rst_n) begin
         tile_m <= 0;
         tile_n <= 0;
         tile_k <= 0;
+        for(i = 0; i < 128; i = i + 1) begin
+            for(j = 0; j < 128; j = j + 1) begin
+                c_reg[i][j] <= 0;
+            end
+        end
     end
     else if(in_valid) begin
         M_reg <= M;
@@ -136,6 +150,11 @@ always @(posedge clk or negedge rst_n) begin
         tile_m <= 0;
         tile_n <= 0;
         tile_k <= 0;
+        for(i = 0; i < 128; i = i + 1) begin
+            for(j = 0; j < 128; j = j + 1) begin
+                c_reg[i][j] <= 0;
+            end
+        end
     end
 end
 
@@ -154,7 +173,7 @@ always @(*) begin
                 next_state = LOAD;
         end
         CALC: begin
-            if(calc_cnt > 6)  
+            if(calc_cnt > 13)  
                 next_state = ACCUMULATE;
             else
                 next_state = CALC;
@@ -194,9 +213,13 @@ always @(posedge clk or negedge rst_n) begin
         calc_cnt <= 0;
         wb_cnt <= 0;
         state <= IDLE;
+        systolic_valid <= 0;
     end
     else begin
         state <= next_state;
+        
+
+        systolic_valid <= (state == IDLE && in_valid) || (state == TILE_NEXT && next_state == LOAD);
         
         case(state)
             IDLE: begin
@@ -217,6 +240,10 @@ always @(posedge clk or negedge rst_n) begin
                     A_buffer_in <= A_data_out;
                     B_buffer_in <= B_data_out;
                 end
+                else begin
+                    A_buffer_in <= 0;
+                    B_buffer_in <= 0;
+                end
                 load_cnt <= load_cnt + 1;
                 
                 if(load_cnt > 3) begin
@@ -229,7 +256,13 @@ always @(posedge clk or negedge rst_n) begin
                 B_buffer_in <= 0;
                 calc_cnt <= calc_cnt + 1;
                 
-                if(calc_cnt > 6) begin
+                if(calc_cnt == 14) begin
+                    for(i = 0; i < 4; i = i + 1) begin
+                        c_reg[tile_m * 4 + i][tile_n * 4 + 0] <= c_out[i][127:96];
+                        c_reg[tile_m * 4 + i][tile_n * 4 + 1] <= c_out[i][95:64];
+                        c_reg[tile_m * 4 + i][tile_n * 4 + 2] <= c_out[i][63:32];
+                        c_reg[tile_m * 4 + i][tile_n * 4 + 3] <= c_out[i][31:0];
+                    end
                     wb_cnt <= 0;
                 end
             end
@@ -237,6 +270,7 @@ always @(posedge clk or negedge rst_n) begin
             ACCUMULATE: begin
                 if(tile_k >= max_tile_k - 1) begin
                     tile_k <= 0;
+                    load_cnt <= 0;
                 end
                 else begin
                     tile_k <= tile_k + 1;
@@ -247,12 +281,12 @@ always @(posedge clk or negedge rst_n) begin
             WRITEBACK: begin
                 C_wr_en <= 1;
                 C_index <= C_addr;
-                if(tile_k == 0) begin
-                    C_data_in <= c_out[wb_cnt];
-                end
-                else begin
-                    C_data_in <= C_data_out + c_out[wb_cnt];
-                end
+                C_data_in <= {
+                    c_reg[tile_m * 4 + wb_cnt][tile_n * 4 + 0],
+                    c_reg[tile_m * 4 + wb_cnt][tile_n * 4 + 1],
+                    c_reg[tile_m * 4 + wb_cnt][tile_n * 4 + 2],
+                    c_reg[tile_m * 4 + wb_cnt][tile_n * 4 + 3]
+                };
                 wb_cnt <= wb_cnt + 1;
             end
             
