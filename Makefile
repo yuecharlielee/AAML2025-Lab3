@@ -26,7 +26,7 @@ verif2: clean
 verif3: clean
 	python3 data_generator.py --mode 2 --target_dir verif3 --ncases 10
 	cp verif3/input.txt verif3/input.bk
-	mv verif3/input.txt $(TESTBENCH)/
+	cp verif3/input.txt $(TESTBENCH)/
 	$(VERILOG) -g2005-sv -o verif3/simulation $(TESTBENCH)/TESTBENCH.v -I $(TESTBENCH) -I $(RTL_DIR) -D RTL
 	$(SIM) verif3/simulation +access+r
 
