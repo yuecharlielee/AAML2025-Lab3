@@ -103,7 +103,7 @@ reg [7:0] load_cnt, calc_cnt, wb_cnt;
 
 wire [15:0] A_addr = tile_k * 4 * max_tile_m + tile_m * 4 + load_cnt;
 wire [15:0] B_addr = tile_k * 4 * max_tile_n + tile_n * 4 + load_cnt;  
-wire [15:0] C_addr = tile_m * 4 * max_tile_n + tile_n * 4 + wb_cnt;
+wire [15:0] C_addr = tile_n * M_reg + tile_m * 4 + wb_cnt;
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n) begin
@@ -251,7 +251,7 @@ always @(posedge clk or negedge rst_n) begin
             end
             
             WRITEBACK: begin
-                if(tile_k >= max_tile_k - 1) begin
+                if(tile_k >= max_tile_k - 1 && (tile_m * 4 + wb_cnt < M_reg)) begin
                     C_wr_en <= 1;
                     C_index <= C_addr;
                     C_data_in <= {c_reg[wb_cnt][0], c_reg[wb_cnt][1], c_reg[wb_cnt][2], c_reg[wb_cnt][3]};
