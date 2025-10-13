@@ -67,11 +67,11 @@ buffer input_buffer_B (
     .data_in(B_buffer_in),
     .data_out(B_buffer_out)
 );
-
+reg sa_valid;
 
 systolic_array SA (
     .rst_n(rst_n),
-    .in_valid(in_valid),
+    .in_valid(sa_valid),
     .clk(clk),
     .in_a(A_buffer_out),
     .in_b(B_buffer_out),
@@ -107,6 +107,8 @@ reg [7:0] load_cnt, calc_cnt, wb_cnt;
 
 reg [15:0] A_addr, B_addr, C_addr;
 
+
+
 always @(*) begin
     if(tile_k == max_tile_k - 1) begin
         if(tile_k * 4 + load_cnt > K_reg) begin
@@ -126,7 +128,23 @@ always @(*) begin
         C_addr = ((tile_m * K_reg)  + wb_cnt);
     end
 
-    
+end
+
+reg [15:0] next_tile_m, next_tile_n;
+always @(*) begin
+    if(tile_n < max_tile_n) begin
+        next_tile_n = tile_n + 1;
+        next_tile_m = tile_m;
+    end
+    else begin
+        next_tile_n = 0;
+        if(tile_m < max_tile_m) begin
+            next_tile_m = tile_m + 1;
+        end
+        else begin
+            next_tile_m = 0;
+        end
+    end
 end
 
 always @(posedge clk or negedge rst_n) begin
@@ -206,6 +224,7 @@ always @(posedge clk or negedge rst_n) begin
         load_cnt <= 0;
         calc_cnt <= 0;
         wb_cnt <= 0;
+        sa_valid <= 0;
         state <= IDLE;
     end
     else begin
@@ -218,6 +237,7 @@ always @(posedge clk or negedge rst_n) begin
                     load_cnt <= 0;
                     calc_cnt <= 0;
                     wb_cnt <= 0;
+                    sa_valid <= 1;
                 end
                 else begin
                     busy <= 0;
@@ -230,6 +250,7 @@ always @(posedge clk or negedge rst_n) begin
             LOAD: begin
                 A_index <= A_addr;
                 B_index <= B_addr;
+                sa_valid <= 0;
                 
                 if(tile_k * 4 + load_cnt > K_reg) begin
                     A_buffer_in <= 0; 
@@ -244,22 +265,24 @@ always @(posedge clk or negedge rst_n) begin
                     B_buffer_in <= B_data_out;
                 end
                 
-                load_cnt <= load_cnt + 1;
-                
                 if(load_cnt > 3) begin
-                    calc_cnt <= 0;
+                    load_cnt <= 0;
+                end
+                else begin
+                    load_cnt <= load_cnt + 1;
                 end
             end
             
             CALC: begin
                 A_buffer_in <= 0;
                 B_buffer_in <= 0;
-                calc_cnt <= calc_cnt + 1;
                 
                 if(calc_cnt == 8) begin
                     tile_k <= tile_k + 1;
-                    wb_cnt <= 0;
-                    load_cnt <= 0;
+                    calc_cnt <= 0;
+                end
+                else begin
+                    calc_cnt <= calc_cnt + 1;
                 end
             end
             
@@ -268,27 +291,16 @@ always @(posedge clk or negedge rst_n) begin
                     C_wr_en <= 1;
                     C_index <= C_addr;
                     C_data_in <= c_out[wb_cnt];
+                    wb_cnt <= wb_cnt + 1;
                 end
                 else begin
                     C_wr_en <= 0;
-                    load_cnt <= 0;
                     tile_k <= 0;
-                    
-                    if(tile_n < max_tile_n - 1) begin
-                        tile_n <= tile_n + 1;
-                    end
-                    else begin
-                        tile_n <= 0;
-                        if(tile_m < max_tile_m - 1) begin
-                            tile_m <= tile_m + 1;
-                        end
-                        else begin
-                            tile_m <= 0;
-                        end
-                    end
+                    sa_valid <= 1;
+                    tile_m <= next_tile_m;
+                    tile_n <= next_tile_n;
+                    wb_cnt <= 0;
                 end
-                wb_cnt <= wb_cnt + 1;
-                
             end
             DONE: begin
                 busy <= 0;
