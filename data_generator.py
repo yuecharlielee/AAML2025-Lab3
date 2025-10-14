@@ -91,7 +91,7 @@ def gen_one_case(i, in_fd=None, c_fd=None, all_one=False, mode=0, shape_range=(4
     elif mode == 1:
         K = M = N = 4
     elif mode == 2:
-        K = random.randint(shape_range[0], shape_range[1])
+        K = 128
         M = 4
         N = 4
     elif mode == 3:

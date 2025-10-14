@@ -98,7 +98,7 @@ localparam CALC = 3'd2;
 localparam WRITEBACK = 3'd3;
 localparam DONE = 3'd4;
 
-reg [1:0] state, next_state;
+reg [3:0] state, next_state;
 reg [7:0] load_cnt, calc_cnt, wb_cnt;
 
 // wire [15:0] A_addr = tile_k * 4 * max_tile_m + tile_m * 4 + load_cnt;
@@ -181,17 +181,14 @@ always @(*) begin
                 next_state = IDLE;
         end
         LOAD: begin
-            if(load_cnt > 3) 
+            if(load_cnt > K_reg) 
                 next_state = CALC;
             else
                 next_state = LOAD;
         end
         CALC: begin
-            if(calc_cnt >= 8)
-                if(tile_k < max_tile_k - 1)
-                    next_state = LOAD;
-                else
-                    next_state = WRITEBACK;
+            if(calc_cnt == 7)
+                next_state = WRITEBACK;    
             else
                 next_state = CALC;
         end
@@ -265,7 +262,7 @@ always @(posedge clk or negedge rst_n) begin
                     B_buffer_in <= B_data_out;
                 end
                 
-                if(load_cnt > 3) begin
+                if(load_cnt > K_reg) begin
                     load_cnt <= 0;
                 end
                 else begin
@@ -277,8 +274,7 @@ always @(posedge clk or negedge rst_n) begin
                 A_buffer_in <= 0;
                 B_buffer_in <= 0;
                 
-                if(calc_cnt == 8) begin
-                    tile_k <= tile_k + 1;
+                if(calc_cnt == 7) begin
                     calc_cnt <= 0;
                 end
                 else begin
@@ -295,7 +291,6 @@ always @(posedge clk or negedge rst_n) begin
                 end
                 else begin
                     C_wr_en <= 0;
-                    tile_k <= 0;
                     sa_valid <= 1;
                     tile_m <= next_tile_m;
                     tile_n <= next_tile_n;
