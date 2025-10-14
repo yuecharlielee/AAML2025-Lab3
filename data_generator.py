@@ -95,10 +95,13 @@ def gen_one_case(i, in_fd=None, c_fd=None, all_one=False, mode=0, shape_range=(4
         M = 4
         N = 4
     elif mode == 3:
-        # K = random.randint(shape_range[0], shape_range[1])
-        # M = random.randint(shape_range[0], shape_range[1])
-        # N = random.randint(shape_range[0], shape_range[1])
-        K = M = N = 5
+        K = random.randint(shape_range[0], shape_range[1])
+        M = random.randint(shape_range[0], shape_range[1])
+        N = random.randint(shape_range[0], shape_range[1])
+        
+        # K = 5
+        # M = 6
+        # N = 7
 
     elif mode == 4:
         K = M = N = 16

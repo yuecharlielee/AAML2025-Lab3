@@ -119,26 +119,37 @@ always @(*) begin
             A_addr = (((tile_m * K_reg) + (tile_k * 4))) + load_cnt;
             B_addr = (((tile_n * K_reg) + (tile_k * 4))) + load_cnt;
         end
-
-        C_addr = ((tile_m * K_reg) + wb_cnt);
     end
     else begin
         A_addr = (((tile_m * K_reg) + (tile_k * 4))) + load_cnt;
         B_addr = (((tile_n * K_reg) + (tile_k * 4))) + load_cnt;
-        C_addr = ((tile_m * K_reg)  + wb_cnt);
     end
 
+
+    C_addr = ((tile_n * M_reg) + (tile_m * 4)) + wb_cnt;
+
+    // if(tile_k == max_tile_k - 1) begin
+    //     if(tile_k * 4 + load_cnt > K_reg) begin
+    //         C_addr = ((tile_n * K_reg) + K_reg) + wb_cnt;
+    //     end
+    //     else begin
+    //         C_addr = (((tile_n * K_reg) + (tile_k * 4))) + wb_cnt;
+    //     end
+    // end
+    // else begin
+    //     C_addr = (((tile_n * K_reg) + (tile_k * 4))) + wb_cnt;
+    // end
 end
 
 reg [15:0] next_tile_m, next_tile_n;
 always @(*) begin
-    if(tile_n < max_tile_n) begin
+    if(tile_n < max_tile_n - 1) begin
         next_tile_n = tile_n + 1;
         next_tile_m = tile_m;
     end
     else begin
         next_tile_n = 0;
-        if(tile_m < max_tile_m) begin
+        if(tile_m < max_tile_m - 1) begin
             next_tile_m = tile_m + 1;
         end
         else begin
@@ -181,7 +192,7 @@ always @(*) begin
                 next_state = IDLE;
         end
         LOAD: begin
-            if(load_cnt > K_reg) 
+            if(load_cnt > K_reg || tile_k * 4 + load_cnt > K_reg) 
                 next_state = CALC;
             else
                 next_state = LOAD;
@@ -193,7 +204,7 @@ always @(*) begin
                 next_state = CALC;
         end
         WRITEBACK: begin
-            if(wb_cnt > 3) begin
+            if(wb_cnt > 3 || tile_m * 4 + wb_cnt >= M_reg) begin
                 if(tile_n < max_tile_n - 1 || tile_m < max_tile_m - 1)
                     next_state = LOAD;
                 else
@@ -283,7 +294,7 @@ always @(posedge clk or negedge rst_n) begin
             end
             
             WRITEBACK: begin
-                if(wb_cnt <= 3) begin
+                if(wb_cnt <= 3 && tile_m * 4 + wb_cnt < M_reg) begin
                     C_wr_en <= 1;
                     C_index <= C_addr;
                     C_data_in <= c_out[wb_cnt];
